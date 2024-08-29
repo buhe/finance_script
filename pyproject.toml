@@ -10,6 +10,7 @@ packages = [{include = "finance"}]
 python = "^3.11"
 yfinance = "^0.2.43"
 scipy="^1.14.1"
+matplotlib = "^3.9.2"
 
 
 [build-system]
