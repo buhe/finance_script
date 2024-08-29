@@ -3,7 +3,7 @@ from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 import datetime
 
-# 设置时间段：最近一年
+# 设置时间段：最近10年
 end_date = datetime.datetime.today()
 start_date = end_date - datetime.timedelta(days=3650)
 
