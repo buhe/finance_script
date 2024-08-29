@@ -30,19 +30,22 @@ for ticker in tickers:
     # print(result.head())
     sum = sum + result
 
-print("cd data:")
+# print("cd data:")
 cd_raw = yf.download('^TNX', start=start_date, end=end_date)['Adj Close']
 cd_raw = (((cd_raw + 100) / 100) ** 1)
 # TODO 债劵的分红
 # TODO cd 的复利
-cd = cd_raw ** 10 * 0.23
+cd = cd_raw ** 1 * 0.23
 
 
 real_estate = 0.18
 # 假设房地产和货币基金不涨不跌
 # 绘制收盘价折线图
+sum = sum + real_estate + cd
+last_element = sum.iloc[-2] ** (1 / 10)
+print(f'年化收益率:{(last_element - 1) * 100:.2f}%')
 plt.figure(figsize=(10, 6))
-plt.plot(sum + real_estate + cd, label=f'Asset Allocation')
+plt.plot(sum, label=f'Asset Allocation')
 plt.plot(sp500 / sp500_first, label=f'S&P 500')
 plt.plot(cn300 / cn300_first, label=f'CN 300')
 plt.title(f'Asset Allocation vs Other Indexes')
