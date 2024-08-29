@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "py-f"
+name = "finance"
 version = "0.1.0"
 description = ""
 authors = ["buhe <bugu1986@126.com>"]
 readme = "README.md"
-packages = [{include = "py_f"}]
+packages = [{include = "finance"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
