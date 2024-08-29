@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 import datetime
 
 # 设置时间段：最近一年
-end_date = datetime.datetime.today() - datetime.timedelta(days=100)
+end_date = datetime.datetime.today()
 start_date = end_date - datetime.timedelta(days=3650)
 
 sp500 = yf.download('SPY', start=start_date, end=end_date)['Adj Close']
 sp500_first = sp500.iloc[0]
-tickers = ['KWEB', 'SPY', '600519.SS', '600036.SS', 'GLD', 'ASHR', '511260.SS', '^TNX']
-weight = [0.05, 0.19, 0.017, 0.008, 0.03, 0.015, 0.01, 0.23]
+tickers = ['KWEB', 'SPY', '600519.SS', '600036.SS', 'GLD', 'ASHR', '511260.SS', '^TNX', 'AAPL', 'TSLA', 'TCEHY', 'API', 'SPY', 'TLT', 'SGOV', 'VGIT']
+weight = [0.05, 0.19, 0.017, 0.008, 0.03, 0.015, 0.01, 0.23, 0.01 * 2, 0.01, 0.01, 0.05, 0.19, 0.07, 0.09, 0.02]
 weight_index = 0
 sum = 0
 
