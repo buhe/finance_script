@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "py-f"
+version = "0.1.0"
+description = ""
+authors = ["buhe <bugu1986@126.com>"]
+readme = "README.md"
+packages = [{include = "py_f"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+yfinance = "^0.2.43"
+scipy="^1.14.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
