@@ -26,9 +26,10 @@ for ticker in tickers:
     print(result.head())
     sum = sum + result
 
+real_estate = 0.18
 # 绘制收盘价折线图
 plt.figure(figsize=(10, 6))
-plt.plot(sum, label=f'Asset Allocation')
+plt.plot(sum + real_estate, label=f'Asset Allocation')
 plt.plot(sp500 / sp500_first, label=f'S&P 500')
 plt.title(f'Asset Allocation vs Other Indexes')
 plt.xlabel('Date')
