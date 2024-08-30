@@ -8,22 +8,30 @@ def popAndPad(list, pop, pad):
     # print(f"series_length: {series_length}")
     cloned_series = list.copy()
     i = 0
+    
     while True:
+        assert i >= 0
+        assert pop >= 1
         updated_index = i + (pop * 365)
+        assert updated_index >= 365
         if updated_index >= series_length - 1:
             break
+        # print(f"updated_index: {updated_index}")
+        # assert updated_index >= 365
         cloned_series.iloc[updated_index] = list.iloc[i + ((pop - 1) * 365)]
         i = i + 1
-        if pop >= 1:
-            cloned_series.iloc[i + ((pop - 1) * 365)] = pad
-            pop = pop - 1
+    
+    for i in range(pop - 1):
+        for j in range(365):
+            cloned_series.iloc[i * 365 + j] = pad
+        
     return cloned_series
 
 year = 10
 end_date = datetime.datetime.today()
 start_date = end_date - datetime.timedelta(days=365 * year)
 
-sp500 = yf.download('SPY', start=start_date, end=end_date)['Adj Close']
+sp500 = yf.download('VOO', start=start_date, end=end_date)['Adj Close']
 sp500_first = sp500.iloc[0]
 
 cn300 = yf.download('ASHR', start=start_date, end=end_date)['Adj Close']
@@ -54,17 +62,17 @@ cd_raw = (cd_raw + 100) / 100
 # TODO 债劵的分红
 
 cd_year = int(len(cd_raw) / 365)
-cd = 0.23
+cd = 1
 # cd = cd_raw
 for i in range(1, cd_year):
     # print(f"i: {i}")
     cd = cd * popAndPad(cd_raw, i, 1)
-
-# print(f"cd: {cd.tail(20)}")
+cd_result = cd * 0.23
+print(f"cd: {cd.head()}")
 real_estate = 0.18
 # 假设房地产和货币基金不涨不跌
 # 绘制收盘价折线图
-sum = sum + real_estate + cd
+sum = sum + real_estate + cd_result
 sp500 = sp500 / sp500_first
 cn300 = cn300 / cn300_first
 
@@ -74,11 +82,14 @@ sp500_last_element = sp500.iloc[-20] ** (1 / year)
 print(f'标普500年化收益率:{(sp500_last_element - 1) * 100:.2f}%')
 cn300_last_element = cn300.iloc[-20] ** (1 / year)
 print(f'沪深300年化收益率:{(cn300_last_element - 1) * 100:.2f}%')
+cd_last_element = cd.iloc[-20] ** (1 / year)
+print(f'定期存款年化收益率:{(cd_last_element - 1) * 100:.2f}%')
 
 plt.figure(figsize=(10, 6))
 plt.plot(sum, label=f'Asset Allocation')
 plt.plot(sp500, label=f'S&P 500')
 plt.plot(cn300, label=f'CN 300')
+plt.plot(cd, label=f'Pure CD')
 plt.title(f'Asset Allocation vs Other Indexes')
 plt.xlabel('Date')
 plt.ylabel('Percentage')
