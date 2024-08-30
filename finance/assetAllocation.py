@@ -19,10 +19,9 @@ def popAndPad(list, pop, pad):
             pop = pop - 1
     return cloned_series
 
-
-# 设置时间段：最近10年
+year = 10
 end_date = datetime.datetime.today()
-start_date = end_date - datetime.timedelta(days=365 * 5)
+start_date = end_date - datetime.timedelta(days=365 * year)
 
 sp500 = yf.download('SPY', start=start_date, end=end_date)['Adj Close']
 sp500_first = sp500.iloc[0]
@@ -65,12 +64,20 @@ real_estate = 0.18
 # 假设房地产和货币基金不涨不跌
 # 绘制收盘价折线图
 sum = sum + real_estate + cd
-last_element = sum.iloc[-20] ** (1 / 10)
-print(f'年化收益率:{(last_element - 1) * 100:.2f}%')
+sp500 = sp500 / sp500_first
+cn300 = cn300 / cn300_first
+
+last_element = sum.iloc[-20] ** (1 / year)
+print(f'资产配置年化收益率:{(last_element - 1) * 100:.2f}%')
+sp500_last_element = sp500.iloc[-20] ** (1 / year)
+print(f'标普500年化收益率:{(sp500_last_element - 1) * 100:.2f}%')
+cn300_last_element = cn300.iloc[-20] ** (1 / year)
+print(f'沪深300年化收益率:{(cn300_last_element - 1) * 100:.2f}%')
+
 plt.figure(figsize=(10, 6))
 plt.plot(sum, label=f'Asset Allocation')
-plt.plot(sp500 / sp500_first, label=f'S&P 500')
-plt.plot(cn300 / cn300_first, label=f'CN 300')
+plt.plot(sp500, label=f'S&P 500')
+plt.plot(cn300, label=f'CN 300')
 plt.title(f'Asset Allocation vs Other Indexes')
 plt.xlabel('Date')
 plt.ylabel('Percentage')
