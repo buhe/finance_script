@@ -2,6 +2,13 @@ import yfinance as yf
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 import datetime
+def vsAndAnnualized(indexes, year, start_date, end_date):
+    data = yf.download(indexes, start=start_date, end=end_date)['Adj Close']
+    data_first = data.iloc[0]
+    data = data / data_first
+    data_last_element = data.iloc[-20] ** (1 / year)
+    annualized = (data_last_element - 1) * 100
+    return data, annualized
 
 def popAndPad(list, pop, pad):
     series_length = len(list)
@@ -76,6 +83,10 @@ sum = sum + real_estate + cd_result
 sp500 = sp500 / sp500_first
 cn300 = cn300 / cn300_first
 
+gld,glda = vsAndAnnualized('GLD', year, start_date, end_date)
+tlt,tlta = vsAndAnnualized('TLT', year, start_date, end_date)
+cnd,cnda = vsAndAnnualized('511260.SS', year, start_date, end_date)
+
 last_element = sum.iloc[-20] ** (1 / year)
 print(f'资产配置年化收益率:{(last_element - 1) * 100:.2f}%')
 sp500_last_element = sp500.iloc[-20] ** (1 / year)
@@ -85,11 +96,18 @@ print(f'沪深300年化收益率:{(cn300_last_element - 1) * 100:.2f}%')
 cd_last_element = cd.iloc[-20] ** (1 / year)
 print(f'定期存款年化收益率:{(cd_last_element - 1) * 100:.2f}%')
 
+print(f'黄金年化收益率:{glda:.2f}%')
+print(f'TLT年化收益率:{tlta:.2f}%')
+print(f'中国10年期国债年化收益率:{cnda:.2f}%')
+
 plt.figure(figsize=(10, 6))
 plt.plot(sum, label=f'Asset Allocation')
 plt.plot(sp500, label=f'S&P 500')
 plt.plot(cn300, label=f'CN 300')
 plt.plot(cd, label=f'Pure CD')
+plt.plot(gld, label=f'Glod')
+plt.plot(tlt, label=f'TLT')
+plt.plot(cnd, label=f'CN 10Y')
 plt.title(f'Asset Allocation vs Other Indexes')
 plt.xlabel('Date')
 plt.ylabel('Percentage')
