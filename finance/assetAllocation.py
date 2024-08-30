@@ -3,9 +3,26 @@ from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 import datetime
 
+def popAndPad(list, pop, pad):
+    series_length = len(list)
+    # print(f"series_length: {series_length}")
+    cloned_series = list.copy()
+    i = 0
+    while True:
+        updated_index = i + (pop * 365)
+        if updated_index >= series_length - 1:
+            break
+        cloned_series.iloc[updated_index] = list.iloc[i + ((pop - 1) * 365)]
+        i = i + 1
+        if pop >= 1:
+            cloned_series.iloc[i + ((pop - 1) * 365)] = pad
+            pop = pop - 1
+    return cloned_series
+
+
 # 设置时间段：最近10年
 end_date = datetime.datetime.today()
-start_date = end_date - datetime.timedelta(days=3650)
+start_date = end_date - datetime.timedelta(days=365 * 5)
 
 sp500 = yf.download('SPY', start=start_date, end=end_date)['Adj Close']
 sp500_first = sp500.iloc[0]
@@ -32,17 +49,23 @@ for ticker in tickers:
 
 # print("cd data:")
 cd_raw = yf.download('^TNX', start=start_date, end=end_date)['Adj Close']
-cd_raw = (((cd_raw + 100) / 100) ** 1)
+cd_raw = (cd_raw + 100) / 100
+# print(cd_raw.head())
 # TODO 债劵的分红
-# TODO cd 的复利
-cd = cd_raw ** 1 * 0.23
 
+cd_year = int(len(cd_raw) / 365)
+cd = 0.23
+# cd = cd_raw
+for i in range(1, cd_year):
+    # print(f"i: {i}")
+    cd = cd * popAndPad(cd_raw, i, 1)
 
+# print(f"cd: {cd.tail(20)}")
 real_estate = 0.18
 # 假设房地产和货币基金不涨不跌
 # 绘制收盘价折线图
 sum = sum + real_estate + cd
-last_element = sum.iloc[-2] ** (1 / 10)
+last_element = sum.iloc[-20] ** (1 / 10)
 print(f'年化收益率:{(last_element - 1) * 100:.2f}%')
 plt.figure(figsize=(10, 6))
 plt.plot(sum, label=f'Asset Allocation')
