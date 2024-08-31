@@ -34,7 +34,7 @@ def popAndPad(list, pop, pad):
         
     return cloned_series
 
-year = 10
+year = 5
 end_date = datetime.datetime.today()
 start_date = end_date - datetime.timedelta(days=365 * year)
 
@@ -75,7 +75,7 @@ for i in range(1, cd_year):
     # print(f"i: {i}")
     cd = cd * popAndPad(cd_raw, i, 1)
 cd_result = cd * 0.23
-print(f"cd: {cd.head()}")
+# print(f"cd: {cd.head()}")
 real_estate = 0.18
 # 假设房地产和货币基金不涨不跌
 # 绘制收盘价折线图
