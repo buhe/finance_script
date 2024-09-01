@@ -34,7 +34,7 @@ def popAndPad(list, pop, pad):
         
     return cloned_series
 
-year = 5
+year = 10
 end_date = datetime.datetime.today()
 start_date = end_date - datetime.timedelta(days=365 * year)
 
@@ -45,7 +45,7 @@ cn300 = yf.download('ASHR', start=start_date, end=end_date)['Adj Close']
 cn300_first = cn300.iloc[0]
 
 tickers = ['KWEB', 'VOO', '600519.SS', '600036.SS', 'GLD', 'ASHR', '511260.SS', 'AAPL', 'TSLA', 'TCEHY', 'API', 'TLT', 'SGOV', 'VGIT']
-weight = [0.03, 0.21, 0.017, 0.008, 0.03, 0.015, 0.01, 0.015, 0.01, 0.015, 0.05, 0.07, 0.09, 0.02]
+weight = [0.03, 0.21, 0.017, 0.008, 0.03, 0.015, 0.01, 0.015, 0.01, 0.015, 0.05, 0.06, 0.09, 0.03]
 assert len(tickers) == len(weight)
 weight_index = 0
 sum = 0
