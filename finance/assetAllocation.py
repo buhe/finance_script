@@ -40,12 +40,16 @@ start_date = end_date - datetime.timedelta(days=365 * year)
 
 sp500 = yf.download('VOO', start=start_date, end=end_date)['Adj Close']
 sp500_first = sp500.iloc[0]
+sp500d = yf.download('SPYD', start=start_date, end=end_date)['Adj Close']
+sp500_firstd = sp500d.iloc[0]
 
 cn300 = yf.download('ASHR', start=start_date, end=end_date)['Adj Close']
 cn300_first = cn300.iloc[0]
 
-tickers = ['KWEB', 'VOO', '600519.SS', '600036.SS', 'GLD', 'ASHR', '511260.SS', 'AAPL', 'TSLA', 'TCEHY', 'API', 'TLT', 'SGOV', 'VGIT']
-weight = [0.03, 0.21, 0.017, 0.008, 0.03, 0.015, 0.01, 0.015, 0.01, 0.015, 0.05, 0.06, 0.09, 0.03]
+tickers = ['SPYD', '600519.SS', '600036.SS', 'GLD', 'ASHR', '511260.SS', 'AAPL', 'TCEHY', 'API', 'TLT', 'SGOV', 'VGIT']
+weight = [0.19, 0.026, 0.008, 0.03, 0.02, 0.01, 0.033, 0.033, 0.05, 0.06, 0.09, 0.03]
+print(len(tickers))
+print(len(weight))
 assert len(tickers) == len(weight)
 weight_index = 0
 sum = 0
@@ -76,11 +80,12 @@ for i in range(1, cd_year):
     cd = cd * popAndPad(cd_raw, i, 1)
 cd_result = cd * 0.23
 # print(f"cd: {cd.head()}")
-real_estate = 0.18
+real_estate = 0.17
 # 假设房地产和货币基金不涨不跌
 # 绘制收盘价折线图
 sum = sum + real_estate + cd_result
 sp500 = sp500 / sp500_first
+sp500d = sp500d / sp500_firstd
 cn300 = cn300 / cn300_first
 
 gld,glda = vsAndAnnualized('GLD', year, start_date, end_date)
@@ -92,6 +97,8 @@ last_element = sum.iloc[-20] ** (1 / year)
 print(f'资产配置年化收益率:{(last_element - 1) * 100:.2f}%')
 sp500_last_element = sp500.iloc[-20] ** (1 / year)
 print(f'标普500年化收益率:{(sp500_last_element - 1) * 100:.2f}%')
+sp500_last_elementd = sp500d.iloc[-20] ** (1 / year)
+print(f'标普500红利年化收益率:{(sp500_last_elementd - 1) * 100:.2f}%')
 cn300_last_element = cn300.iloc[-20] ** (1 / year)
 print(f'沪深300年化收益率:{(cn300_last_element - 1) * 100:.2f}%')
 cd_last_element = cd.iloc[-20] ** (1 / year)
