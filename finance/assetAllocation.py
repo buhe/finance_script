@@ -3,6 +3,8 @@ from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 import datetime
 
+import numpy as np
+
 def vsAndAnnualized(indexes, year, start_date, end_date):
     data = yf.download(indexes, start=start_date, end=end_date)['Adj Close']
     data_first = data.iloc[0]
@@ -55,8 +57,8 @@ sp500_firstd = sp500d.iloc[0]
 cn300 = yf.download('ASHR', start=start_date, end=end_date)['Adj Close']
 cn300_first = cn300.iloc[0]
 
-tickers = ['VOO', 'SPYD', '600519.SS', '600036.SS', 'GLD', 'ASHR', '511260.SS', 'AAPL', 'TCEHY', 'API', 'TLT', 'SGOV', 'VGIT']
-weight = [0.05, 0.14, 0.026, 0.008, 0.03, 0.02, 0.01, 0.033, 0.033, 0.05, 0.06, 0.09, 0.03]
+tickers = ['VOO', 'SPYD', 'SCHD', '600519.SS', '600036.SS', 'GLD', 'ASHR', '511260.SS', 'AAPL', 'TCEHY', 'API', 'TLT', 'SGOV', 'VGIT']
+weight = [0.05, 0.09, 0.05, 0.026, 0.008, 0.03, 0.02, 0.01, 0.033, 0.033, 0.05, 0.06, 0.09, 0.03]
 print(len(tickers))
 print(len(weight))
 assert len(tickers) == len(weight)
@@ -101,7 +103,7 @@ gld,glda = vsAndAnnualized('GLD', year, start_date, end_date)
 tlt,tlta = vsAndAnnualized('TLT', year, start_date, end_date)
 cnd,cnda = vsAndAnnualized('511260.SS', year, start_date, end_date)
 kweb,kweba = vsAndAnnualized('KWEB', year, start_date, end_date)
-
+# -20 是倒数第 20 个
 last_element = sum.iloc[-20] ** (1 / year)
 print(f'资产配置年化收益率:{(last_element - 1) * 100:.2f}%')
 sp500_last_element = sp500.iloc[-20] ** (1 / year)
@@ -117,6 +119,10 @@ print(f'黄金年化收益率:{glda:.2f}%')
 print(f'TLT年化收益率:{tlta:.2f}%')
 print(f'中国10年期国债年化收益率:{cnda:.2f}%')
 print(f'KWEB 年化收益率:{kweba:.2f}%')
+
+# 其中，252是每年交易日的数量。在Python中，可以使用 numpy 库计算标准差：
+volatility = sum.std() * np.sqrt(252)
+print(f"资产配置的年化波动率: {volatility}")
 
 plt.figure(figsize=(10, 6))
 plt.plot(sum, label=f'Asset Allocation')
