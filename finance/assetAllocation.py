@@ -2,6 +2,7 @@ import yfinance as yf
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 import datetime
+
 def vsAndAnnualized(indexes, year, start_date, end_date):
     data = yf.download(indexes, start=start_date, end=end_date)['Adj Close']
     data_first = data.iloc[0]
@@ -35,7 +36,15 @@ def popAndPad(list, pop, pad):
     return cloned_series
 
 year = 10
-end_date = datetime.datetime.today()
+
+# 假设你有一个日期时间字符串
+date_string = '2024-05-19 14:30:00'
+
+# 指定日期时间的格式
+date_format = '%Y-%m-%d %H:%M:%S'
+
+# 使用strptime()函数将字符串转换为datetime对象
+end_date = datetime.datetime.strptime(date_string, date_format)
 start_date = end_date - datetime.timedelta(days=365 * year)
 
 sp500 = yf.download('VOO', start=start_date, end=end_date)['Adj Close']
