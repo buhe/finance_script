@@ -57,8 +57,8 @@ sp500_firstd = sp500d.iloc[0]
 cn300 = yf.download('ASHR', start=start_date, end=end_date)['Adj Close']
 cn300_first = cn300.iloc[0]
 
-tickers = ['VOO', 'SPYD', 'SCHD', '600519.SS', '600036.SS', 'GLD', 'ASHR', '511260.SS', 'AAPL', 'TCEHY', 'API', 'TLT', 'SGOV', 'VGIT']
-weight = [0.05, 0.09, 0.05, 0.026, 0.008, 0.03, 0.02, 0.01, 0.033, 0.033, 0.05, 0.06, 0.09, 0.03]
+tickers = ['VOO', '600519.SS', '600036.SS', 'GLD', 'ASHR', '511260.SS', 'AAPL', 'TCEHY', 'API', 'TLT', 'SGOV']
+weight = [0.22, 0.026, 0.008, 0.03, 0.02, 0.01, 0.033, 0.033, 0.05, 0.09, 0.09]
 print(len(tickers))
 print(len(weight))
 assert len(tickers) == len(weight)
