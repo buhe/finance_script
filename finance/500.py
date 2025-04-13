@@ -29,17 +29,21 @@ def get_sp500_tickers():
     """
     # 使用yfinance获取标普500成分股列表
     # 可以通过下载^GSPC的信息来获取
-    # sp500 = yf.Ticker("^GSPC")
+    sp500 = yf.Ticker("^GSPC")
     
-    # try:
-    #     # 尝试获取标普500的成分股
-    #     return sp500.index_components
-    # except:
-    print("无法获取标普500成分股列表，使用备选方法...")
-    # 如果上面的方法失败，使用备选方法
-    # 下载标普500 ETF (SPY)的前几个大权重股作为示例
-    # 在实际应用中，可以考虑使用其他数据源获取完整列表
-    return ['AAPL', 'MSFT', 'AMZN', 'NVDA', 'GOOGL', 'META', 'GOOG', 'BRK-B', 'UNH', 'JPM', 'XOM', 'JNJ', 'V', 'PG', 'MA']
+    try:
+        # 尝试获取标普500的成分股
+        url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+        tables = pd.read_html(url)
+        sp500_table = tables[0]  # 第一个表格通常是成分股列表
+        tickers = sp500_table["Symbol"].tolist()
+        return tickers
+    except Exception as e:
+        print(f"\n获取 500 列表出错: {e}")
+        # 如果上面的方法失败，使用备选方法
+        # 下载标普500 ETF (SPY)的前几个大权重股作为示例
+        # 在实际应用中，可以考虑使用其他数据源获取完整列表
+        return ['AAPL', 'MSFT', 'AMZN', 'NVDA', 'GOOGL', 'META', 'GOOG', 'BRK-B', 'UNH', 'JPM', 'XOM', 'JNJ', 'V', 'PG', 'MA']
 
 def get_financial_metrics(ticker):
     """
