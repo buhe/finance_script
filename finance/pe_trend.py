@@ -156,10 +156,10 @@ plt.plot(pe_series_cleaned.index.astype(str), # X轴使用年份字符串
          color='royalblue'    # 设置线条颜色
         )
 
-# 添加标题和标签
-plt.title(f'{ticker_symbol} 过去 {years_to_fetch} 年市盈率(P/E)趋势 (基于财年结束数据)', fontsize=16)
-plt.xlabel('年份', fontsize=12)
-plt.ylabel('年度市盈率 (P/E Ratio)', fontsize=12)
+# 添加标题和标签 - 改为英文
+plt.title(f'{ticker_symbol} P/E Ratio Trend Over Past {years_to_fetch} Years (Based on Fiscal Year End)', fontsize=16)
+plt.xlabel('Year', fontsize=12)
+plt.ylabel('Annual P/E Ratio', fontsize=12)
 
 # 设置 X 轴刻度为整数年，并旋转标签以防重叠
 plt.xticks(rotation=45)
