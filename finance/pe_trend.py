@@ -23,7 +23,12 @@ try:
     if financials.empty:
         print(f"错误：无法获取 {ticker_symbol} 的年度财务数据。")
         exit()
-
+    print("\n--- DEBUG: yfinance 返回的 financials 数据的列 (日期) ---")
+    if not financials.empty:
+        print(financials.columns)
+    else:
+        print("financials 数据为空")
+    print("-----------------------------------------------------------\n")
     # 转置数据，使日期成为索引，方便按行查找项目
     financials_t = financials.T
     # 尝试获取 'Basic EPS' (基本每股收益)，如果不存在可能需要检查其他名称
