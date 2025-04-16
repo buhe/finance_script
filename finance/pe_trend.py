@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 import matplotlib.dates as mdates # 用于更好地格式化日期轴
 
 # --- 配置 ---
-ticker_symbol = 'AAPL' # 股票代码
+# 从用户获取股票代码
+ticker_symbol = input("请输入股票代码 (例如: AAPL, MSFT, GOOG): ").strip().upper()
 years_to_fetch = 15    # 获取多少年的数据
 
 # --- 计算日期范围 ---
