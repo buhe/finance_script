@@ -17,6 +17,17 @@ start_date_approx = end_date - timedelta(days=years_to_fetch * 365.25 + 60)
 # --- 获取股票对象 ---
 ticker = yf.Ticker(ticker_symbol)
 
+# 打印 ticker.info 中的所有键
+print("\n--- ticker.info 可获取的所有信息字段 ---")
+try:
+    info = ticker.info
+    print("可用字段:")
+    for key in sorted(info.keys()):
+        print(f"- {key}: {type(info[key]).__name__}")
+except Exception as e:
+    print(f"获取 ticker.info 时出错: {e}")
+print("-------------------------------------------\n")
+
 # --- 获取年度财务数据 (损益表，需要EPS) ---
 try:
     # .financials 通常返回年度数据，列是财年结束日期
@@ -156,7 +167,26 @@ plt.plot(pe_series_cleaned.index.astype(str), # X轴使用年份字符串
          color='royalblue'    # 设置线条颜色
         )
 
-# 添加标题和标签 - 改为英文
+# 获取当前PE值
+try:
+    
+    # 获取最新的TTM EPS (Trailing Twelve Months)
+    current_pe = ticker.info.get('trailingPE')
+    
+    if current_pe and current_pe > 0:
+        
+        # 在图表上添加当前PE值的标记
+        plt.axhline(y=current_pe, color='r', linestyle='--', alpha=0.7)
+        plt.text(plt.xlim()[1], current_pe, f' Current P/E: {current_pe:.2f}', 
+                 verticalalignment='center', color='r', fontweight='bold')
+        
+        print(f"\n当前PE值: {current_pe:.2f} ")
+    else:
+        print("\n无法计算当前PE值: EPS数据无效或为负")
+except Exception as e:
+    print(f"\n获取当前PE值时出错: {e}")
+
+# 添加标题和标签 - 使用英文
 plt.title(f'{ticker_symbol} P/E Ratio Trend Over Past {years_to_fetch} Years (Based on Fiscal Year End)', fontsize=16)
 plt.xlabel('Year', fontsize=12)
 plt.ylabel('Annual P/E Ratio', fontsize=12)
