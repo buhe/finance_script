@@ -31,6 +31,11 @@ Specific scripts:
   poetry run python3 finance/500.py
   ```
 
+  To fetch PE trends:
+  ```
+  poetry run python3 finance/pe_trend.py
+  ```
+
 ## Summary
 
 - The correlation coefficient between the Shanghai and Shenzhen 300 Index and the S&P 500 Index over the past 10 years is: **0.4266**
