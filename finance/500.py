@@ -117,6 +117,15 @@ def main():
     # 将结果转换为DataFrame
     df = pd.DataFrame(all_metrics)
     
+    # 创建原始数据的副本，用于条件格式化
+    df_original = df.copy()
+    
+    # 打印DataFrame的实际列名，用于调试
+    print("\nDataFrame的实际列名:")
+    print(df.columns.tolist())
+    print("\nDataFrame_original的实际列名:")
+    print(df_original.columns.tolist())
+    
     # 格式化百分比列
     for col in ['Gross Margin', 'ROE']:
         df[col] = df[col].apply(lambda x: f"{x:.2%}" if pd.notnull(x) and isinstance(x, (int, float)) else "N/A")
@@ -132,8 +141,44 @@ def main():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = os.path.join(output_dir, f"SP500_Financial_Metrics_{timestamp}.xlsx")
     
-    # 导出到Excel
-    df.to_excel(output_file, index=False)
+    # 导出到Excel，但不立即保存，而是创建一个ExcelWriter对象
+    with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='SP500')
+        
+        # 获取工作簿和工作表对象
+        workbook = writer.book
+        worksheet = writer.sheets['SP500']
+        
+        # 导入openpyxl的样式模块
+        from openpyxl.styles import PatternFill
+        
+        # 定义红色填充
+        red_fill = PatternFill(start_color='FFFF0000', end_color='FFFF0000', fill_type='solid')
+        
+        # 获取列索引
+        gm_col_idx = df.columns.get_loc('Gross Margin') + 1  # Excel列从1开始
+        pe_col_idx = df.columns.get_loc('PE Ratio') + 1
+        roe_col_idx = df.columns.get_loc('ROE') + 1
+        
+        # 遍历数据行，应用条件格式
+        for row_idx, row in enumerate(df_original.iterrows(), start=2):  # Excel行从2开始（跳过标题行）
+            # row是一个元组，包含索引和Series，我们需要的是Series部分
+            _, data = row
+            
+            # 检查毛利率是否低于60%
+            if pd.notnull(data['Gross Margin']) and isinstance(data['Gross Margin'], (int, float)) and data['Gross Margin'] < 0.6:
+                cell = worksheet.cell(row=row_idx, column=gm_col_idx)
+                cell.fill = red_fill
+            
+            # 检查PE是否大于50
+            if pd.notnull(data['PE Ratio']) and isinstance(data['PE Ratio'], (int, float)) and data['PE Ratio'] > 50:
+                cell = worksheet.cell(row=row_idx, column=pe_col_idx)
+                cell.fill = red_fill
+            
+            # 检查ROE是否小于20%
+            if pd.notnull(data['ROE']) and isinstance(data['ROE'], (int, float)) and data['ROE'] < 0.2:
+                cell = worksheet.cell(row=row_idx, column=roe_col_idx)
+                cell.fill = red_fill
     
     print(f"\n处理完成! 共处理了 {len(all_metrics)} 个公司的财务数据")
     print(f"结果已保存到: {output_file}")
