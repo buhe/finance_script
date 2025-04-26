@@ -151,34 +151,59 @@ def main():
         
         # 导入openpyxl的样式模块
         from openpyxl.styles import PatternFill
-        
-        # 定义红色填充
-        red_fill = PatternFill(start_color='FFFF0000', end_color='FFFF0000', fill_type='solid')
-        
+
+        # 定义填充颜色
+        light_green_fill = PatternFill(start_color='FF90EE90', end_color='FF90EE90', fill_type='solid') # 浅绿色
+        light_yellow_fill = PatternFill(start_color='FFFFFFE0', end_color='FFFFFFE0', fill_type='solid') # 浅黄色
+        light_red_fill = PatternFill(start_color='FFFFC0CB', end_color='FFFFC0CB', fill_type='solid') # 浅红色 (淡粉色)
+
         # 获取列索引
-        gm_col_idx = df.columns.get_loc('Gross Margin') + 1  # Excel列从1开始
+        ticker_col_idx = df.columns.get_loc('Ticker') + 1 # Excel列从1开始
+        gm_col_idx = df.columns.get_loc('Gross Margin') + 1
         pe_col_idx = df.columns.get_loc('PE Ratio') + 1
         roe_col_idx = df.columns.get_loc('ROE') + 1
-        
+
         # 遍历数据行，应用条件格式
         for row_idx, row in enumerate(df_original.iterrows(), start=2):  # Excel行从2开始（跳过标题行）
             # row是一个元组，包含索引和Series，我们需要的是Series部分
             _, data = row
-            
+
+            # 获取原始数值用于判断
+            gm = data['Gross Margin']
+            pe = data['PE Ratio']
+            roe = data['ROE']
+
+            # 获取 Ticker 单元格
+            ticker_cell = worksheet.cell(row=row_idx, column=ticker_col_idx)
+
+            # 检查所有指标是否有效
+            gm_valid = pd.notnull(gm) and isinstance(gm, (int, float))
+            pe_valid = pd.notnull(pe) and isinstance(pe, (int, float))
+            roe_valid = pd.notnull(roe) and isinstance(roe, (int, float))
+
+            # 应用条件格式到 Ticker 列
+            if gm_valid and pe_valid and roe_valid and gm > 0.6 and pe < 50 and roe > 0.2:
+                ticker_cell.fill = light_green_fill
+            elif gm_valid and roe_valid and gm > 0.6 and roe > 0.2 and (not pe_valid or pe >= 50):
+                ticker_cell.fill = light_yellow_fill
+            else:
+                ticker_cell.fill = light_red_fill
+
+            # 应用条件格式到单个指标单元格
             # 检查毛利率是否低于60%
-            if pd.notnull(data['Gross Margin']) and isinstance(data['Gross Margin'], (int, float)) and data['Gross Margin'] < 0.6:
+            if gm_valid and gm < 0.6:
                 cell = worksheet.cell(row=row_idx, column=gm_col_idx)
-                cell.fill = red_fill
-            
+                cell.fill = light_red_fill # 使用浅红色
+
             # 检查PE是否大于50
-            if pd.notnull(data['PE Ratio']) and isinstance(data['PE Ratio'], (int, float)) and data['PE Ratio'] > 50:
+            if pe_valid and pe > 50:
                 cell = worksheet.cell(row=row_idx, column=pe_col_idx)
-                cell.fill = red_fill
-            
+                cell.fill = light_red_fill # 使用浅红色
+
             # 检查ROE是否小于20%
-            if pd.notnull(data['ROE']) and isinstance(data['ROE'], (int, float)) and data['ROE'] < 0.2:
+            if roe_valid and roe < 0.2:
                 cell = worksheet.cell(row=row_idx, column=roe_col_idx)
-                cell.fill = red_fill
+                cell.fill = light_red_fill # 使用浅红色
     
     print(f"\n处理完成! 共处理了 {len(all_metrics)} 个公司的财务数据")
     print(f"结果已保存到: {output_file}")
