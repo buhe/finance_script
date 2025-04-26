@@ -3,6 +3,7 @@ import time
 import os
 import sys
 from datetime import datetime
+import winsound # 用于播放提示音
 
 # 检查是否安装了必要的库
 try:
@@ -217,6 +218,16 @@ def main():
     print(f"- 成功获取毛利率数据的公司数: {len(valid_gm)} / {len(df)}")
     print(f"- 成功获取市盈率数据的公司数: {len(valid_pe)} / {len(df)}")
     print(f"- 成功获取ROE数据的公司数: {len(valid_roe)} / {len(df)}")
+        # 播放开始提示音 (Windows系统)
+    try:
+        print("尝试播放启动提示音...") # 添加调用前打印
+        winsound.Beep(800, 1000) # 播放一个简短的启动音
+        print(f"winsound.Beep 调用完成，未引发异常。") # 添加调用后打印
+    except RuntimeError as re: # 捕获特定的运行时错误
+        print(f"播放启动提示音时发生运行时错误: {re}")
+    except Exception as e: # 捕获其他一般性错误
+        print(f"播放启动提示音时发生其他错误: {e}")
+        
 
 if __name__ == "__main__":
     main()
