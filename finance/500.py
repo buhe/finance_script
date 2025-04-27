@@ -156,6 +156,7 @@ def main():
         # 定义填充颜色
         light_green_fill = PatternFill(start_color='FF90EE90', end_color='FF90EE90', fill_type='solid') # 浅绿色
         light_yellow_fill = PatternFill(start_color='FFFFFFE0', end_color='FFFFFFE0', fill_type='solid') # 浅黄色
+        light_blue_fill = PatternFill(start_color='ADD8E6', end_color='ADD8E6', fill_type='solid') # 浅蓝色
         light_red_fill = PatternFill(start_color='FFFFC0CB', end_color='FFFFC0CB', fill_type='solid') # 浅红色 (淡粉色)
 
         # 获取列索引
@@ -182,13 +183,15 @@ def main():
             pe_valid = pd.notnull(pe) and isinstance(pe, (int, float))
             roe_valid = pd.notnull(roe) and isinstance(roe, (int, float))
 
-            # 应用条件格式到 Ticker 列
+            # 应用条件格式到 Ticker 列 (优先级：绿 > 蓝 > 黄 > 红)
             if gm_valid and pe_valid and roe_valid and gm > 0.6 and pe < 50 and roe > 0.2:
-                ticker_cell.fill = light_green_fill
+                ticker_cell.fill = light_green_fill # 最佳：浅绿
+            elif gm_valid and pe_valid and roe_valid and gm > 0.4 and gm <= 0.6 and pe < 50 and roe > 0.2:
+                ticker_cell.fill = light_blue_fill # 次佳：浅蓝
             elif gm_valid and roe_valid and gm > 0.6 and roe > 0.2 and (not pe_valid or pe >= 50):
-                ticker_cell.fill = light_yellow_fill
+                ticker_cell.fill = light_yellow_fill # 警告：浅黄 (PE不满足)
             else:
-                ticker_cell.fill = light_red_fill
+                ticker_cell.fill = light_red_fill # 其他情况：浅红
 
             # 应用条件格式到单个指标单元格
             # 检查毛利率是否低于60%
