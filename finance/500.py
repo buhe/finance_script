@@ -57,35 +57,86 @@ def get_financial_metrics(ticker):
         info = stock.info
         
         # 计算毛利率 (Gross Margin)
-        # 毛利率 = (总收入 - 销售成本) / 总收入
         gross_margin = info.get('grossMargins', None)
         
         # 获取市盈率 (PE Ratio)
         pe_ratio = info.get('trailingPE', None)
         
         # 计算净资产收益率 (ROE)
-        # ROE = 净利润 / 股东权益
         roe = info.get('returnOnEquity', None)
 
-        # 获取资产负债表数据以计算权益乘数
+        # 获取市值
+        market_cap = info.get('marketCap', None)
+
+        # 获取股息率 (年化)
+        dividend_yield = info.get('dividendYield', None) # TTM dividend yield
+        # 获取年化股息 (每股)
+        dividend_rate = info.get('dividendRate', None) # Forward annual dividend rate
+        if dividend_rate is None:
+            dividend_rate = info.get('trailingAnnualDividendRate', None) # TTM annual dividend rate
+
+        # 获取流通股数
+        shares_outstanding = info.get('sharesOutstanding', None)
+
+        # 计算总股息支付额 (近似)
+        total_dividend_paid = None
+        if dividend_rate is not None and shares_outstanding is not None:
+            total_dividend_paid = dividend_rate * shares_outstanding
+        elif dividend_yield is not None and market_cap is not None:
+            # 如果没有每股股息，用股息率和市值估算
+            total_dividend_paid = dividend_yield * market_cap
+
+        # 获取现金流量表数据以计算股票回购额
         equity_multiplier = None
+        buyback_amount = None
         try:
             balance_sheet = stock.balance_sheet
-            if not balance_sheet.empty:
-                latest_bs = balance_sheet.iloc[:, 0] # 获取最新一期数据
-                total_assets = latest_bs.get('Total Assets', None)
-                # 尝试不同的股东权益名称
-                total_equity = latest_bs.get('Total Stockholder Equity', None)
-                if total_equity is None:
-                    total_equity = latest_bs.get('Stockholders Equity', None)
-                if total_equity is None:
-                    total_equity = latest_bs.get('Total Equity Gross Minority Interest', None)
+            cashflow = stock.cashflow # 获取现金流量表
 
+            if not balance_sheet.empty:
+                latest_bs = balance_sheet.iloc[:, 0]
+                total_assets = latest_bs.get('Total Assets', None)
+                total_equity = latest_bs.get('Total Stockholder Equity', None)
+                if total_equity is None: total_equity = latest_bs.get('Stockholders Equity', None)
+                if total_equity is None: total_equity = latest_bs.get('Total Equity Gross Minority Interest', None)
                 if total_assets is not None and total_equity is not None and total_equity != 0:
                     equity_multiplier = total_assets / total_equity
-        except Exception as bs_e:
-            # 打印获取资产负债表或计算时的错误，但不中断流程
-            print(f"\n获取或计算 {ticker} 权益乘数时出错: {bs_e}")
+            
+            # 从现金流量表获取回购数据 (通常是负值)
+            if not cashflow.empty:
+                latest_cf = cashflow.iloc[:, 0] # 获取最新一期数据
+                # 尝试不同的回购项目名称
+                repurchase_key = None
+                possible_buyback_keys = [
+                    'Repurchase Of Stock', 
+                    'Repurchase Of Capital Stock', 
+                    'Repurchase/retirement Of Stock'
+                ]
+                for key in possible_buyback_keys:
+                    if key in latest_cf.index:
+                        repurchase_key = key
+                        break
+                
+                if repurchase_key:
+                    buyback_value = latest_cf.get(repurchase_key, 0)
+                    # 回购通常是负值（现金流出），我们需要正值
+                    buyback_amount = abs(buyback_value) if pd.notnull(buyback_value) else 0
+                else:
+                    buyback_amount = 0 # 如果找不到回购项，则视为0
+            else:
+                 buyback_amount = 0 # 现金流量表为空，视为0
+
+        except Exception as fin_e:
+            print(f"\n获取或计算 {ticker} 权益乘数或回购额时出错: {fin_e}")
+            buyback_amount = 0 # 出错时视为0
+
+        # 计算真实股息和真实股息率
+        real_dividend = None
+        real_dividend_yield = None
+        if total_dividend_paid is not None and buyback_amount is not None:
+            real_dividend = total_dividend_paid + buyback_amount
+            if market_cap is not None and market_cap != 0:
+                real_dividend_yield = real_dividend / market_cap
 
         return {
             'Ticker': ticker,
@@ -95,7 +146,9 @@ def get_financial_metrics(ticker):
             'Gross Margin': gross_margin,
             'PE Ratio': pe_ratio,
             'ROE': roe,
-            'Equity Multiplier': equity_multiplier # 添加权益乘数
+            'Equity Multiplier': equity_multiplier,
+            'Dividend Yield': dividend_yield, # 添加普通股息率
+            'Real Dividend Yield': real_dividend_yield # 添加真实股息率
         }
     except Exception as e:
         print(f"\n获取 {ticker} 的财务指标时出错: {e}")
@@ -107,7 +160,9 @@ def get_financial_metrics(ticker):
             'Gross Margin': None,
             'PE Ratio': None,
             'ROE': None,
-            'Equity Multiplier': None # 错误时也返回None
+            'Equity Multiplier': None,
+            'Dividend Yield': None, # 错误时也返回None
+            'Real Dividend Yield': None # 错误时也返回None
         }
 
 def main():
@@ -150,7 +205,7 @@ def main():
     print(df_original.columns.tolist())
     
     # 格式化百分比列
-    for col in ['Gross Margin', 'ROE']:
+    for col in ['Gross Margin', 'ROE', 'Dividend Yield', 'Real Dividend Yield']:
         df[col] = df[col].apply(lambda x: f"{x:.2%}" if pd.notnull(x) and isinstance(x, (int, float)) else "N/A")
     
     # 格式化PE Ratio 和 Equity Multiplier
@@ -243,12 +298,16 @@ def main():
     valid_pe = df[df['PE Ratio'] != 'N/A']
     valid_roe = df[df['ROE'] != 'N/A']
     valid_em = df[df['Equity Multiplier'] != 'N/A'] # 检查有效的权益乘数
+    valid_dy = df[df['Dividend Yield'] != 'N/A'] # 检查有效的股息率
+    valid_rdy = df[df['Real Dividend Yield'] != 'N/A'] # 检查有效的真实股息率
     
     print(f"\n数据统计:")
     print(f"- 成功获取毛利率数据的公司数: {len(valid_gm)} / {len(df)}")
     print(f"- 成功获取市盈率数据的公司数: {len(valid_pe)} / {len(df)}")
     print(f"- 成功获取ROE数据的公司数: {len(valid_roe)} / {len(df)}")
     print(f"- 成功获取权益乘数数据的公司数: {len(valid_em)} / {len(df)}") # 添加权益乘数统计
+    print(f"- 成功获取股息率数据的公司数: {len(valid_dy)} / {len(df)}") # 添加股息率统计
+    print(f"- 成功获取真实股息率数据的公司数: {len(valid_rdy)} / {len(df)}") # 添加真实股息率统计
         # 播放开始提示音 (Windows系统)
     try:
         print("尝试播放启动提示音...") # 添加调用前打印
