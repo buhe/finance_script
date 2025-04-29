@@ -91,13 +91,18 @@ def get_financial_metrics(ticker):
         #     # 注意：这里的 dividend_yield 已经是修正后的小数值
         #     total_dividend_paid = dividend_yield * market_cap
 
-        # 获取现金流量表数据以计算股票回购额
+        # 获取现金流量表和资产负债表数据
         equity_multiplier = None
         buyback_amount = None
+        profit_growth_y1 = None
+        profit_growth_y2 = None
+        profit_growth_y3 = None
         try:
             balance_sheet = stock.balance_sheet
             cashflow = stock.cashflow # 获取现金流量表
+            financials = stock.financials # 获取年度损益表
 
+            # 计算权益乘数
             if not balance_sheet.empty:
                 latest_bs = balance_sheet.iloc[:, 0]
                 total_assets = latest_bs.get('Total Assets', None)
@@ -107,10 +112,9 @@ def get_financial_metrics(ticker):
                 if total_assets is not None and total_equity is not None and total_equity != 0:
                     equity_multiplier = total_assets / total_equity
             
-            # 从现金流量表获取回购数据 (通常是负值)
+            # 计算回购额
             if not cashflow.empty:
                 latest_cf = cashflow.iloc[:, 0] # 获取最新一期数据
-                # 尝试不同的回购项目名称
                 repurchase_key = None
                 possible_buyback_keys = [
                     'Repurchase Of Stock', 
@@ -124,16 +128,50 @@ def get_financial_metrics(ticker):
                 
                 if repurchase_key:
                     buyback_value = latest_cf.get(repurchase_key, 0)
-                    # 回购通常是负值（现金流出），我们需要正值
                     buyback_amount = abs(buyback_value) if pd.notnull(buyback_value) else 0
                 else:
-                    buyback_amount = 0 # 如果找不到回购项，则视为0
+                    buyback_amount = 0
             else:
-                 buyback_amount = 0 # 现金流量表为空，视为0
+                 buyback_amount = 0
+
+            # 计算利润增长率
+            if not financials.empty and financials.shape[1] >= 4: # 确保至少有4年的数据
+                # 尝试获取净利润，yfinance的键名可能变化
+                net_income_key = None
+                possible_income_keys = [
+                    'Net Income',
+                    'Net Income Applicable To Common Shares',
+                    'Net Income From Continuing Ops'
+                ]
+                for key in possible_income_keys:
+                    if key in financials.index:
+                        net_income_key = key
+                        break
+                
+                if net_income_key:
+                    # 获取最近四年的净利润 (yfinance列通常是时间倒序)
+                    ni_y0 = financials.loc[net_income_key].iloc[0] # 最近一年
+                    ni_y1 = financials.loc[net_income_key].iloc[1]
+                    ni_y2 = financials.loc[net_income_key].iloc[2]
+                    ni_y3 = financials.loc[net_income_key].iloc[3] # 第四年前
+
+                    # 计算增长率，处理分母为0或负数的情况
+                    if pd.notnull(ni_y0) and pd.notnull(ni_y1) and ni_y1 > 0:
+                        profit_growth_y1 = (ni_y0 / ni_y1) - 1
+                    if pd.notnull(ni_y1) and pd.notnull(ni_y2) and ni_y2 > 0:
+                        profit_growth_y2 = (ni_y1 / ni_y2) - 1
+                    if pd.notnull(ni_y2) and pd.notnull(ni_y3) and ni_y3 > 0:
+                        profit_growth_y3 = (ni_y2 / ni_y3) - 1
+                else:
+                    print(f"\n警告: 未能在 {ticker} 的财务数据中找到净利润项。可用项: {financials.index.tolist()}")
 
         except Exception as fin_e:
-            print(f"\n获取或计算 {ticker} 权益乘数或回购额时出错: {fin_e}")
+            print(f"\n获取或计算 {ticker} 详细财务数据时出错: {fin_e}")
             buyback_amount = 0 # 出错时视为0
+            # 利润增长率也设为None
+            profit_growth_y1 = None
+            profit_growth_y2 = None
+            profit_growth_y3 = None
 
         # 计算真实股息和真实股息率
         real_dividend = None
@@ -153,7 +191,10 @@ def get_financial_metrics(ticker):
             'ROE': roe,
             'Equity Multiplier': equity_multiplier,
             'Dividend Yield': dividend_yield, # 添加普通股息率 (已修正)
-            'Real Dividend Yield': real_dividend_yield # 添加真实股息率
+            'Real Dividend Yield': real_dividend_yield, # 添加真实股息率
+            'Profit Growth Y1': profit_growth_y1, # 最近一年增长率
+            'Profit Growth Y2': profit_growth_y2, # 前一年增长率
+            'Profit Growth Y3': profit_growth_y3  # 再前一年增长率
         }
     except Exception as e:
         print(f"\n获取 {ticker} 的财务指标时出错: {e}")
@@ -167,7 +208,10 @@ def get_financial_metrics(ticker):
             'ROE': None,
             'Equity Multiplier': None,
             'Dividend Yield': None, # 错误时也返回None
-            'Real Dividend Yield': None # 错误时也返回None
+            'Real Dividend Yield': None, # 错误时也返回None
+            'Profit Growth Y1': None,
+            'Profit Growth Y2': None,
+            'Profit Growth Y3': None
         }
 
 def main():
@@ -210,7 +254,7 @@ def main():
     print(df_original.columns.tolist())
     
     # 格式化百分比列
-    for col in ['Gross Margin', 'ROE', 'Dividend Yield', 'Real Dividend Yield']:
+    for col in ['Gross Margin', 'ROE', 'Dividend Yield', 'Real Dividend Yield', 'Profit Growth Y1', 'Profit Growth Y2', 'Profit Growth Y3']:
         df[col] = df[col].apply(lambda x: f"{x:.2%}" if pd.notnull(x) and isinstance(x, (int, float)) else "N/A")
     
     # 格式化PE Ratio 和 Equity Multiplier
@@ -327,6 +371,9 @@ def main():
     valid_em = df[df['Equity Multiplier'] != 'N/A'] # 检查有效的权益乘数
     valid_dy = df[df['Dividend Yield'] != 'N/A'] # 检查有效的股息率
     valid_rdy = df[df['Real Dividend Yield'] != 'N/A'] # 检查有效的真实股息率
+    valid_pg1 = df[df['Profit Growth Y1'] != 'N/A'] # 检查有效的利润增长率Y1
+    valid_pg2 = df[df['Profit Growth Y2'] != 'N/A'] # 检查有效的利润增长率Y2
+    valid_pg3 = df[df['Profit Growth Y3'] != 'N/A'] # 检查有效的利润增长率Y3
     
     print(f"\n数据统计:")
     print(f"- 成功获取毛利率数据的公司数: {len(valid_gm)} / {len(df)}")
@@ -335,6 +382,9 @@ def main():
     print(f"- 成功获取权益乘数数据的公司数: {len(valid_em)} / {len(df)}") # 添加权益乘数统计
     print(f"- 成功获取股息率数据的公司数: {len(valid_dy)} / {len(df)}") # 添加股息率统计
     print(f"- 成功获取真实股息率数据的公司数: {len(valid_rdy)} / {len(df)}") # 添加真实股息率统计
+    print(f"- 成功获取最近1年利润增长率数据的公司数: {len(valid_pg1)} / {len(df)}") # 添加利润增长率统计
+    print(f"- 成功获取最近2年利润增长率数据的公司数: {len(valid_pg2)} / {len(df)}") # 添加利润增长率统计
+    print(f"- 成功获取最近3年利润增长率数据的公司数: {len(valid_pg3)} / {len(df)}") # 添加利润增长率统计
         # 播放开始提示音 (Windows系统)
     try:
         print("尝试播放启动提示音...") # 添加调用前打印
