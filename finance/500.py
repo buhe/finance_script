@@ -70,6 +70,10 @@ def get_financial_metrics(ticker):
 
         # 获取股息率 (年化)
         dividend_yield = info.get('dividendYield', None) # TTM dividend yield
+        # 修正：如果股息率看起来像百分比（>1），则转换为小数
+        if dividend_yield is not None and isinstance(dividend_yield, (int, float)):
+        #  and dividend_yield > 1:
+            dividend_yield /= 100
         # 获取年化股息 (每股)
         dividend_rate = info.get('dividendRate', None) # Forward annual dividend rate
         if dividend_rate is None:
@@ -82,9 +86,10 @@ def get_financial_metrics(ticker):
         total_dividend_paid = None
         if dividend_rate is not None and shares_outstanding is not None:
             total_dividend_paid = dividend_rate * shares_outstanding
-        elif dividend_yield is not None and market_cap is not None:
-            # 如果没有每股股息，用股息率和市值估算
-            total_dividend_paid = dividend_yield * market_cap
+        # elif dividend_yield is not None and market_cap is not None:
+        #     # 如果没有每股股息，用股息率和市值估算
+        #     # 注意：这里的 dividend_yield 已经是修正后的小数值
+        #     total_dividend_paid = dividend_yield * market_cap
 
         # 获取现金流量表数据以计算股票回购额
         equity_multiplier = None
@@ -147,7 +152,7 @@ def get_financial_metrics(ticker):
             'PE Ratio': pe_ratio,
             'ROE': roe,
             'Equity Multiplier': equity_multiplier,
-            'Dividend Yield': dividend_yield, # 添加普通股息率
+            'Dividend Yield': dividend_yield, # 添加普通股息率 (已修正)
             'Real Dividend Yield': real_dividend_yield # 添加真实股息率
         }
     except Exception as e:
