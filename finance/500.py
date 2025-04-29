@@ -248,6 +248,7 @@ def main():
         pe_col_idx = df.columns.get_loc('PE Ratio') + 1
         roe_col_idx = df.columns.get_loc('ROE') + 1
         em_col_idx = df.columns.get_loc('Equity Multiplier') + 1 # 获取权益乘数列索引
+        rdy_col_idx = df.columns.get_loc('Real Dividend Yield') + 1 # 获取真实股息率列索引
 
         # 遍历数据行，应用条件格式
         for row_idx, row in enumerate(df_original.iterrows(), start=2):  # Excel行从2开始（跳过标题行）
@@ -259,6 +260,7 @@ def main():
             pe = data['PE Ratio']
             roe = data['ROE']
             em = data['Equity Multiplier'] # 获取原始权益乘数值
+            rdy = data['Real Dividend Yield'] # 获取原始真实股息率数值
 
             # 获取 Ticker 单元格
             ticker_cell = worksheet.cell(row=row_idx, column=ticker_col_idx)
@@ -268,6 +270,7 @@ def main():
             pe_valid = pd.notnull(pe) and isinstance(pe, (int, float))
             roe_valid = pd.notnull(roe) and isinstance(roe, (int, float))
             em_valid = pd.notnull(em) and isinstance(em, (int, float)) # 检查权益乘数有效性
+            rdy_valid = pd.notnull(rdy) and isinstance(rdy, (int, float)) # 检查真实股息率有效性
 
             # 应用条件格式到 Ticker 列 (优先级：绿 > 蓝 > 黄 > 红)
             if gm_valid and pe_valid and roe_valid and gm > 0.6 and pe < 50 and roe > 0.2:
@@ -294,6 +297,11 @@ def main():
             if roe_valid and roe < 0.2:
                 cell = worksheet.cell(row=row_idx, column=roe_col_idx)
                 cell.fill = light_red_fill # 使用浅红色
+
+            # 检查真实股息率是否大于10%
+            if rdy_valid and rdy > 0.10:
+                cell = worksheet.cell(row=row_idx, column=rdy_col_idx)
+                cell.fill = light_green_fill # 使用浅绿色
     
     print(f"\n处理完成! 共处理了 {len(all_metrics)} 个公司的财务数据")
     print(f"结果已保存到: {output_file}")
