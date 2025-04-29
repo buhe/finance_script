@@ -241,6 +241,7 @@ def main():
         light_yellow_fill = PatternFill(start_color='FFFFFFE0', end_color='FFFFFFE0', fill_type='solid') # 浅黄色
         light_blue_fill = PatternFill(start_color='ADD8E6', end_color='ADD8E6', fill_type='solid') # 浅蓝色
         light_red_fill = PatternFill(start_color='FFFFC0CB', end_color='FFFFC0CB', fill_type='solid') # 浅红色 (淡粉色)
+        light_gray_fill = PatternFill(start_color='FFE0E0E0', end_color='FFE0E0E0', fill_type='solid') # 浅灰色，用于隔行
 
         # 获取列索引
         ticker_col_idx = df.columns.get_loc('Ticker') + 1 # Excel列从1开始
@@ -254,6 +255,19 @@ def main():
         for row_idx, row in enumerate(df_original.iterrows(), start=2):  # Excel行从2开始（跳过标题行）
             # row是一个元组，包含索引和Series，我们需要的是Series部分
             _, data = row
+
+            # --- 添加隔行换色 --- 
+            # 默认白色，偶数行（Excel行号）使用浅灰色
+            row_fill = None
+            if row_idx % 2 == 0:
+                row_fill = light_gray_fill
+            
+            # 应用基础行背景色到该行的所有单元格
+            if row_fill:
+                for col_idx in range(1, len(df.columns) + 1):
+                    cell = worksheet.cell(row=row_idx, column=col_idx)
+                    cell.fill = row_fill
+            # --- 隔行换色结束 ---
 
             # 获取原始数值用于判断
             gm = data['Gross Margin']
