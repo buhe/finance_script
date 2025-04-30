@@ -97,20 +97,29 @@ def get_financial_metrics(ticker):
         profit_growth_y1 = None
         profit_growth_y2 = None
         profit_growth_y3 = None
+        over_ratio = None # 初始化 Over 比率
         try:
             balance_sheet = stock.balance_sheet
             cashflow = stock.cashflow # 获取现金流量表
             financials = stock.financials # 获取年度损益表
 
-            # 计算权益乘数
+            # 计算权益乘数 和 Over 比率
             if not balance_sheet.empty:
                 latest_bs = balance_sheet.iloc[:, 0]
                 total_assets = latest_bs.get('Total Assets', None)
                 total_equity = latest_bs.get('Total Stockholder Equity', None)
                 if total_equity is None: total_equity = latest_bs.get('Stockholders Equity', None)
                 if total_equity is None: total_equity = latest_bs.get('Total Equity Gross Minority Interest', None)
+                
+                # 计算权益乘数
                 if total_assets is not None and total_equity is not None and total_equity != 0:
                     equity_multiplier = total_assets / total_equity
+                
+                # 计算 Over 比率 (总资产 / 流动负债)
+                current_liabilities = latest_bs.get('Total Current Liabilities', None)
+                if current_liabilities is None: current_liabilities = latest_bs.get('Current Liabilities', None) # 备用键名
+                if total_assets is not None and current_liabilities is not None and current_liabilities != 0:
+                    over_ratio = total_assets / current_liabilities
             
             # 计算回购额
             if not cashflow.empty:
@@ -191,10 +200,11 @@ def get_financial_metrics(ticker):
             'ROE': roe,
             'Equity Multiplier': equity_multiplier,
             'Dividend Yield': dividend_yield, # 添加普通股息率 (已修正)
-            'Real Dividend Yield': real_dividend_yield, # 添加真实股息率
+            'Real': real_dividend_yield, # 添加真实股息率
             'Profit Growth Y1': profit_growth_y1, # 最近一年增长率
             'Profit Growth Y2': profit_growth_y2, # 前一年增长率
-            'Profit Growth Y3': profit_growth_y3  # 再前一年增长率
+            'Profit Growth Y3': profit_growth_y3,  # 再前一年增长率
+            'Over': over_ratio # 添加总资产流动负债覆盖倍数
         }
     except Exception as e:
         print(f"\n获取 {ticker} 的财务指标时出错: {e}")
@@ -254,11 +264,11 @@ def main():
     print(df_original.columns.tolist())
     
     # 格式化百分比列
-    for col in ['Gross Margin', 'ROE', 'Dividend Yield', 'Real Dividend Yield', 'Profit Growth Y1', 'Profit Growth Y2', 'Profit Growth Y3']:
+    for col in ['Gross Margin', 'ROE', 'Dividend Yield', 'Real', 'Profit Growth Y1', 'Profit Growth Y2', 'Profit Growth Y3']:
         df[col] = df[col].apply(lambda x: f"{x:.2%}" if pd.notnull(x) and isinstance(x, (int, float)) else "N/A")
     
-    # 格式化PE Ratio 和 Equity Multiplier
-    for col in ['PE Ratio', 'Equity Multiplier']:
+    # 格式化PE Ratio, Equity Multiplier 和 Over
+    for col in ['PE Ratio', 'Equity Multiplier', 'Over']:
         df[col] = df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else "N/A")
     
     # 创建输出目录（如果不存在）
@@ -293,7 +303,7 @@ def main():
         pe_col_idx = df.columns.get_loc('PE Ratio') + 1
         roe_col_idx = df.columns.get_loc('ROE') + 1
         em_col_idx = df.columns.get_loc('Equity Multiplier') + 1 # 获取权益乘数列索引
-        rdy_col_idx = df.columns.get_loc('Real Dividend Yield') + 1 # 获取真实股息率列索引
+        real_col_idx = df.columns.get_loc('Real') + 1 # 获取真实股息率列索引
 
         # 遍历数据行，应用条件格式
         for row_idx, row in enumerate(df_original.iterrows(), start=2):  # Excel行从2开始（跳过标题行）
@@ -318,7 +328,7 @@ def main():
             pe = data['PE Ratio']
             roe = data['ROE']
             em = data['Equity Multiplier'] # 获取原始权益乘数值
-            rdy = data['Real Dividend Yield'] # 获取原始真实股息率数值
+            real_val = data['Real'] # 获取原始真实股息率数值
 
             # 获取 Ticker 单元格
             ticker_cell = worksheet.cell(row=row_idx, column=ticker_col_idx)
@@ -328,7 +338,7 @@ def main():
             pe_valid = pd.notnull(pe) and isinstance(pe, (int, float))
             roe_valid = pd.notnull(roe) and isinstance(roe, (int, float))
             em_valid = pd.notnull(em) and isinstance(em, (int, float)) # 检查权益乘数有效性
-            rdy_valid = pd.notnull(rdy) and isinstance(rdy, (int, float)) # 检查真实股息率有效性
+            real_valid = pd.notnull(real_val) and isinstance(real_val, (int, float)) # 检查真实股息率有效性
 
             # 应用条件格式到 Ticker 列 (优先级：绿 > 蓝 > 黄 > 红)
             if gm_valid and pe_valid and roe_valid and gm > 0.6 and pe < 50 and roe > 0.2:
@@ -357,8 +367,8 @@ def main():
                 cell.fill = light_red_fill # 使用浅红色
 
             # 检查真实股息率是否大于10%
-            if rdy_valid and rdy > 0.10:
-                cell = worksheet.cell(row=row_idx, column=rdy_col_idx)
+            if real_valid and real_val > 0.10:
+                cell = worksheet.cell(row=row_idx, column=real_col_idx)
                 cell.fill = light_green_fill # 使用浅绿色
     
     print(f"\n处理完成! 共处理了 {len(all_metrics)} 个公司的财务数据")
@@ -370,10 +380,11 @@ def main():
     valid_roe = df[df['ROE'] != 'N/A']
     valid_em = df[df['Equity Multiplier'] != 'N/A'] # 检查有效的权益乘数
     valid_dy = df[df['Dividend Yield'] != 'N/A'] # 检查有效的股息率
-    valid_rdy = df[df['Real Dividend Yield'] != 'N/A'] # 检查有效的真实股息率
+    valid_real = df[df['Real'] != 'N/A'] # 检查有效的真实股息率
     valid_pg1 = df[df['Profit Growth Y1'] != 'N/A'] # 检查有效的利润增长率Y1
     valid_pg2 = df[df['Profit Growth Y2'] != 'N/A'] # 检查有效的利润增长率Y2
     valid_pg3 = df[df['Profit Growth Y3'] != 'N/A'] # 检查有效的利润增长率Y3
+    valid_over = df[df['Over'] != 'N/A'] # 检查有效的 Over 比率
     
     print(f"\n数据统计:")
     print(f"- 成功获取毛利率数据的公司数: {len(valid_gm)} / {len(df)}")
@@ -381,10 +392,11 @@ def main():
     print(f"- 成功获取ROE数据的公司数: {len(valid_roe)} / {len(df)}")
     print(f"- 成功获取权益乘数数据的公司数: {len(valid_em)} / {len(df)}") # 添加权益乘数统计
     print(f"- 成功获取股息率数据的公司数: {len(valid_dy)} / {len(df)}") # 添加股息率统计
-    print(f"- 成功获取真实股息率数据的公司数: {len(valid_rdy)} / {len(df)}") # 添加真实股息率统计
+    print(f"- 成功获取真实股息率数据的公司数: {len(valid_real)} / {len(df)}") # 添加真实股息率统计
     print(f"- 成功获取最近1年利润增长率数据的公司数: {len(valid_pg1)} / {len(df)}") # 添加利润增长率统计
     print(f"- 成功获取最近2年利润增长率数据的公司数: {len(valid_pg2)} / {len(df)}") # 添加利润增长率统计
     print(f"- 成功获取最近3年利润增长率数据的公司数: {len(valid_pg3)} / {len(df)}") # 添加利润增长率统计
+    print(f"- 成功获取总资产/流动负债覆盖倍数数据的公司数: {len(valid_over)} / {len(df)}") # 添加 Over 比率统计
         # 播放开始提示音 (Windows系统)
     try:
         print("尝试播放启动提示音...") # 添加调用前打印
