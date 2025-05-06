@@ -99,6 +99,7 @@ def get_financial_metrics(ticker):
         profit_growth_y3 = None
         asset_liability_coverage = None # 初始化资产负债覆盖率
         debt_ratio = None # 初始化有息负债率
+        short_term_debt_cash_ratio = None # 初始化短期负债与现金比率
         try:
             balance_sheet = stock.balance_sheet
             cashflow = stock.cashflow # 获取现金流量表
@@ -111,16 +112,22 @@ def get_financial_metrics(ticker):
                 total_equity = latest_bs.get('Total Stockholder Equity', None)
                 if total_equity is None: total_equity = latest_bs.get('Stockholders Equity', None)
                 if total_equity is None: total_equity = latest_bs.get('Total Equity Gross Minority Interest', None)
-                
+
+                # 获取现金及现金等价物
+                cash_and_equivalents = latest_bs.get('Cash And Cash Equivalents', None)
+                if cash_and_equivalents is None: cash_and_equivalents = latest_bs.get('Cash', None) # 备用键
+                if cash_and_equivalents is None: cash_and_equivalents = latest_bs.get('Cash And Equivalents', None) # 另一个备用键
+                if pd.isnull(cash_and_equivalents): cash_and_equivalents = 0 # 处理 NaN
+
                 # 计算权益乘数
                 if total_assets is not None and total_equity is not None and total_equity != 0:
                     equity_multiplier = total_assets / total_equity
-                
-                # 计算资产负债覆盖率 (总资产 / 流动负债)
-                current_liabilities = latest_bs.get('Total Current Liabilities', None)
-                if current_liabilities is None: current_liabilities = latest_bs.get('Current Liabilities', None) # 备用键名
-                if total_assets is not None and current_liabilities is not None and current_liabilities != 0:
-                    asset_liability_coverage = total_assets / current_liabilities
+
+                # 计算资产负债覆盖率 (总资产 / 流动负债) - 保留旧代码以防万一，但不再使用该变量
+                # current_liabilities = latest_bs.get('Total Current Liabilities', None)
+                # if current_liabilities is None: current_liabilities = latest_bs.get('Current Liabilities', None) # 备用键名
+                # if total_assets is not None and current_liabilities is not None and current_liabilities != 0:
+                #     asset_liability_coverage = total_assets / current_liabilities # 旧代码
 
                 # 计算有息负债率
                 total_liabilities = latest_bs.get('Total Liabilities Net Minority Interest', None)
@@ -133,10 +140,15 @@ def get_financial_metrics(ticker):
                 long_term_debt = latest_bs.get('Long Term Debt', 0) # 如果没有则视为0
                 if pd.isnull(long_term_debt): long_term_debt = 0 # 处理 NaN
 
+                short_term_debt_cash_ratio = None # 初始化短期负债与现金比率
                 if total_liabilities is not None and total_liabilities != 0:
                     interest_bearing_debt = short_term_debt + long_term_debt
                     debt_ratio = interest_bearing_debt / total_liabilities
 
+                # 计算短期负债与现金等价物比例
+                if cash_and_equivalents is not None and cash_and_equivalents != 0:
+                    # short_term_debt 已经在前面获取并处理了 NaN
+                    short_term_debt_cash_ratio = short_term_debt / cash_and_equivalents
             # 计算回购额
             if not cashflow.empty:
                 latest_cf = cashflow.iloc[:, 0] # 获取最新一期数据
@@ -220,7 +232,7 @@ def get_financial_metrics(ticker):
             'Profit Growth Y1': profit_growth_y1, # 最近一年增长率
             'Profit Growth Y2': profit_growth_y2, # 前一年增长率
             'Profit Growth Y3': profit_growth_y3,  # 再前一年增长率
-            'Asset Liability Coverage': asset_liability_coverage, # 添加资产负债覆盖率
+            'Short Term Debt to Cash Ratio': short_term_debt_cash_ratio, # 短期负债/现金
             'Interest Bearing Debt Ratio': debt_ratio # 添加有息负债率
         }
     except Exception as e:
@@ -239,7 +251,7 @@ def get_financial_metrics(ticker):
             'Profit Growth Y1': None,
             'Profit Growth Y2': None,
             'Profit Growth Y3': None,
-            'Asset Liability Coverage': None, # 错误时也返回None
+            'Short Term Debt to Cash Ratio': None, # 错误时也返回None
             'Interest Bearing Debt Ratio': None # 错误时也返回None
         }
 
@@ -286,10 +298,10 @@ def main():
     for col in ['Gross Margin', 'ROE', 'Dividend Yield', 'Real Dividend Yield', 'Profit Growth Y1', 'Profit Growth Y2', 'Profit Growth Y3', 'Interest Bearing Debt Ratio']:
         df[col] = df[col].apply(lambda x: f"{x:.2%}" if pd.notnull(x) and isinstance(x, (int, float)) else "N/A")
     
-    # 格式化PE Ratio, Equity Multiplier 和 Asset Liability Coverage
-    for col in ['PE Ratio', 'Equity Multiplier', 'Asset Liability Coverage']:
+    # 格式化PE Ratio, Equity Multiplier 和 Short Term Debt to Cash Ratio
+    for col in ['PE Ratio', 'Equity Multiplier', 'Short Term Debt to Cash Ratio']:
         df[col] = df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else "N/A")
-    
+
     # 创建输出目录（如果不存在）
     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output')
     os.makedirs(output_dir, exist_ok=True)
@@ -403,7 +415,7 @@ def main():
     valid_pg1 = df[df['Profit Growth Y1'] != 'N/A'] # 检查有效的利润增长率Y1
     valid_pg2 = df[df['Profit Growth Y2'] != 'N/A'] # 检查有效的利润增长率Y2
     valid_pg3 = df[df['Profit Growth Y3'] != 'N/A'] # 检查有效的利润增长率Y3
-    valid_asset_liability_coverage = df[df['Asset Liability Coverage'] != 'N/A'] # 检查有效的资产负债覆盖率
+    valid_short_term_debt_cash_ratio = df[df['Short Term Debt to Cash Ratio'] != 'N/A'] # 检查有效的短期负债与现金比率
     valid_debt_ratio = df[df['Interest Bearing Debt Ratio'] != 'N/A'] # 检查有效的有息负债率
 
     print(f"\n数据统计:")
@@ -416,7 +428,7 @@ def main():
     print(f"- 成功获取最近1年利润增长率数据的公司数: {len(valid_pg1)} / {len(df)}") # 添加利润增长率统计
     print(f"- 成功获取最近2年利润增长率数据的公司数: {len(valid_pg2)} / {len(df)}") # 添加利润增长率统计
     print(f"- 成功获取最近3年利润增长率数据的公司数: {len(valid_pg3)} / {len(df)}") # 添加利润增长率统计
-    print(f"- 成功获取资产负债覆盖率数据的公司数: {len(valid_asset_liability_coverage)} / {len(df)}") # 添加资产负债覆盖率统计
+    print(f"- 成功获取短期负债与现金比率数据的公司数: {len(valid_short_term_debt_cash_ratio)} / {len(df)}") # 添加短期负债与现金比率统计
         # 播放开始提示音 (Windows系统)
     try:
         print("尝试播放启动提示音...") # 添加调用前打印
