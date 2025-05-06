@@ -266,7 +266,7 @@ def main():
         selected_group_name = "Beverage_Companies"
         print(f"已选择分析饮料公司: {tickers}")
     elif choice == '4':
-        tickers = ['MC.PA', 'RMS.PA']
+        tickers = ['MC.PA', 'RMS.PA', 'CFR.SW']
         selected_group_name = "Luxury_Goods_Companies"
         print(f"已选择分析奢侈品公司: {tickers}")
     else:
