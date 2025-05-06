@@ -30,16 +30,6 @@ poetry run python3 xx.py
 
 Specific scripts:
 
--   To run the Pearson correlation script:
-    ```
-    poetry run python3 finance/pearsonr.py
-    ```
-
--   To run the asset allocation script:
-    ```
-    poetry run python3 finance/assetAllocation.py
-    ```
-
 -   To run the S&P 500 related script:
     ```
     poetry run python3 finance/500.py
