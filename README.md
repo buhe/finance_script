@@ -14,7 +14,12 @@ This project uses Poetry for dependency management and running scripts.
     ```
     poetry install
     ```
+3. If you at China homeland, you need set proxy to break the gfw(e.g. as Prowershell):
 
+    ```
+    $env:http_proxy = "127.0.0.1:7890"
+    $env:https_proxy = "127.0.0.1:7890"
+    ```
 ## Scripts
 
 To run a Python script (e.g., `xx.py`) using Poetry:
