@@ -4,14 +4,8 @@ import os
 import sys
 from datetime import datetime
 import winsound # 用于播放提示音
+import pandas as pd
 
-# 检查是否安装了必要的库
-try:
-    import pandas as pd
-except ImportError:
-    print("pandas库未安装，请使用以下命令安装：")
-    print("pip install pandas openpyxl")
-    exit(1)
 
 # 设置显示进度的函数
 def print_progress(current, total, ticker="", prefix="进度", suffix="完成", length=50):
@@ -28,9 +22,6 @@ def get_sp500_tickers():
     """
     获取标普500成分股的股票代码列表
     """
-    # 使用yfinance获取标普500成分股列表
-    # 可以通过下载^GSPC的信息来获取
-    sp500 = yf.Ticker("^GSPC")
     
     try:
         # 尝试获取标普500的成分股
@@ -44,7 +35,7 @@ def get_sp500_tickers():
         # 如果上面的方法失败，使用备选方法
         # 下载标普500 ETF (SPY)的前几个大权重股作为示例
         # 在实际应用中，可以考虑使用其他数据源获取完整列表
-        return ['AAPL', 'MSFT', 'AMZN', 'NVDA', 'GOOGL', 'META', 'GOOG', 'BRK-B', 'UNH', 'JPM', 'XOM', 'JNJ', 'V', 'PG', 'MA']
+        return []
 
 def get_financial_metrics(ticker):
     """
@@ -261,8 +252,9 @@ def main():
     print("1. 标普500成分股 (默认)")
     print("2. 支付公司 (AXP, MA, V, DFS)")
     print("3. 饮料公司 (KO, PEP)")
+    print("4. 奢侈品公司 (MC.PA, RMS.PA)")
     
-    choice = input("请输入选项编号 (1-3，默认为1): ").strip()
+    choice = input("请输入选项编号 (1-4，默认为1): ").strip()
     
     selected_group_name = "SP500"
     if choice == '2':
@@ -273,6 +265,10 @@ def main():
         tickers = ['KO', 'PEP']
         selected_group_name = "Beverage_Companies"
         print(f"已选择分析饮料公司: {tickers}")
+    elif choice == '4':
+        tickers = ['MC.PA', 'RMS.PA']
+        selected_group_name = "Luxury_Goods_Companies"
+        print(f"已选择分析奢侈品公司: {tickers}")
     else:
         # 默认或无效输入，选择标普500
         if choice != '1' and choice != '':
@@ -311,10 +307,10 @@ def main():
     df_original = df.copy()
     
     # 打印DataFrame的实际列名，用于调试
-    print("\nDataFrame的实际列名:")
-    print(df.columns.tolist())
-    print("\nDataFrame_original的实际列名:")
-    print(df_original.columns.tolist())
+    # print("\nDataFrame的实际列名:")
+    # print(df.columns.tolist())
+    # print("\nDataFrame_original的实际列名:")
+    # print(df_original.columns.tolist())
     
     # 格式化百分比列
     for col in ['Gross Margin', 'ROE', 'Dividend Yield', 'Real Dividend Yield', 'Profit Growth Y1', 'Profit Growth Y2', 'Profit Growth Y3', 'Interest Bearing Debt Ratio']:
