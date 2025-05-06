@@ -49,15 +49,3 @@ Specific scripts:
     ```
     poetry run python3 finance/pe_trend.py
     ```
-
-## Summary
-
--   The correlation coefficient between the Shanghai and Shenzhen 300 Index and the S&P 500 Index over the past 10 years is: **0.4266**
-
--   The correlation coefficient between the Shanghai and Shenzhen 300 Index and the Gold Index over the past 10 years is: **0.0683**
-
--   The correlation coefficient between TLT and the S&P 500 Index over the past 10 years is: **-0.2242**
-
--   The correlation coefficient between the Gold Index and the S&P 500 Index over the past 10 years is: **0.0280**
-
--   The script `500.py` is used to obtain the PE (Price-to-Earnings ratio), gross margin, and ROE (Return on Equity) of the S&P 500.
