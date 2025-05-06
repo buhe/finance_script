@@ -247,37 +247,47 @@ def get_financial_metrics(ticker):
         }
 
 def main():
-    print("欢迎使用财务数据分析脚本！")
-    print("请选择要分析的股票组：")
-    print("1. 标普500成分股 (默认)")
-    print("2. 支付公司 (AXP, MA, V, DFS)")
-    print("3. 饮料公司 (KO, PEP)")
-    print("4. 奢侈品公司 (MC.PA, RMS.PA)")
+    print("Welcome to the Financial Data Analysis Script!")
+    print("Please select the stock group to analyze:")
+    print("1. S&P 500 Constituents (Default)")
+    print("2. Payment Companies (AXP, MA, V, DFS)")
+    print("3. Beverage Companies (KO, PEP)")
+    print("4. Luxury Goods Companies (MC.PA, RMS.PA, CFR.SW)")
+    print("5. A-Shares (CMB, Kweichow Moutai, Vanke)")
+    print("6. HK-Shares (Tencent)")
     
-    choice = input("请输入选项编号 (1-4，默认为1): ").strip()
+    choice = input("Enter option number (1-6, default is 1): ").strip()
     
     selected_group_name = "SP500"
     if choice == '2':
         tickers = ['AXP', 'MA', 'V', 'DFS']
         selected_group_name = "Payment_Companies"
-        print(f"已选择分析支付公司: {tickers}")
+        print(f"Selected to analyze Payment Companies: {tickers}")
     elif choice == '3':
         tickers = ['KO', 'PEP']
         selected_group_name = "Beverage_Companies"
-        print(f"已选择分析饮料公司: {tickers}")
+        print(f"Selected to analyze Beverage Companies: {tickers}")
     elif choice == '4':
         tickers = ['MC.PA', 'RMS.PA', 'CFR.SW']
         selected_group_name = "Luxury_Goods_Companies"
-        print(f"已选择分析奢侈品公司: {tickers}")
+        print(f"Selected to analyze Luxury Goods Companies: {tickers}")
+    elif choice == '5':
+        tickers = ['600036.SS', '600519.SS', '000002.SZ'] # CMB, Kweichow Moutai, Vanke
+        selected_group_name = "A_Shares"
+        print(f"Selected to analyze A-Shares: {tickers}")
+    elif choice == '6':
+        tickers = ['0700.HK'] # Tencent
+        selected_group_name = "HK_Shares"
+        print(f"Selected to analyze HK-Shares: {tickers}")
     else:
-        # 默认或无效输入，选择标普500
+        # Default or invalid input, select S&P 500
         if choice != '1' and choice != '':
-            print("无效输入，将默认分析标普500成分股。")
+            print("Invalid input. Defaulting to S&P 500 constituents.")
         tickers = get_sp500_tickers()
-        print(f"开始获取标普500成分股财务数据...成功获取 {len(tickers)} 个成分股")
+        print(f"Fetching financial data for S&P 500 constituents... Successfully fetched {len(tickers)} constituents.")
 
     if not tickers:
-        print("未能获取到股票列表，程序退出。")
+        print("Failed to retrieve the stock list. Exiting program.")
         return
     
     # 存储所有公司的财务指标
@@ -290,7 +300,7 @@ def main():
     # 遍历每个股票代码获取财务指标
     for ticker in tickers:
         count += 1
-        print_progress(count, total, ticker, prefix="处理进度", suffix="")
+        print_progress(count, total, ticker, prefix="Processing Progress", suffix="")
         
         # 获取财务指标
         metrics = get_financial_metrics(ticker)
@@ -428,8 +438,8 @@ def main():
                 cell = worksheet.cell(row=row_idx, column=short_term_debt_cash_ratio_col_idx)
                 cell.fill = light_red_fill # 使用浅红色
     
-    print(f"\n处理完成! 共处理了 {len(all_metrics)} 个公司的财务数据")
-    print(f"结果已保存到: {output_file}")
+    print(f"\nProcessing complete! Financial data for {len(all_metrics)} companies processed.")
+    print(f"Results saved to: {output_file}")
     
     # 显示一些统计信息
     valid_gm = df[df['Gross Margin'] != 'N/A']
@@ -442,28 +452,30 @@ def main():
     valid_pg2 = df[df['Profit Growth Y2'] != 'N/A'] # 检查有效的利润增长率Y2
     valid_pg3 = df[df['Profit Growth Y3'] != 'N/A'] # 检查有效的利润增长率Y3
     valid_short_term_debt_cash_ratio = df[df['Short Term Debt to Cash Ratio'] != 'N/A'] # 检查有效的短期负债与现金比率
-    valid_debt_ratio = df[df['Interest Bearing Debt Ratio'] != 'N/A'] # 检查有效的有息负债率
+    valid_debt_ratio = df[df['Interest Bearing Debt Ratio'] != 'N/A'] # Check for valid interest-bearing debt ratio
 
-    print(f"\n数据统计:")
-    print(f"- 成功获取毛利率数据的公司数: {len(valid_gm)} / {len(df)}")
-    print(f"- 成功获取市盈率数据的公司数: {len(valid_pe)} / {len(df)}")
-    print(f"- 成功获取ROE数据的公司数: {len(valid_roe)} / {len(df)}")
-    print(f"- 成功获取权益乘数数据的公司数: {len(valid_em)} / {len(df)}") # 添加权益乘数统计
-    print(f"- 成功获取股息率数据的公司数: {len(valid_dy)} / {len(df)}") # 添加股息率统计
-    print(f"- 成功获取真实股息率数据的公司数: {len(valid_real)} / {len(df)}") # 添加真实股息率统计
-    print(f"- 成功获取最近1年利润增长率数据的公司数: {len(valid_pg1)} / {len(df)}") # 添加利润增长率统计
-    print(f"- 成功获取最近2年利润增长率数据的公司数: {len(valid_pg2)} / {len(df)}") # 添加利润增长率统计
-    print(f"- 成功获取最近3年利润增长率数据的公司数: {len(valid_pg3)} / {len(df)}") # 添加利润增长率统计
-    print(f"- 成功获取短期负债与现金比率数据的公司数: {len(valid_short_term_debt_cash_ratio)} / {len(df)}") # 添加短期负债与现金比率统计
-        # 播放开始提示音 (Windows系统)
+    print(f"\nData Statistics:")
+    print(f"- Companies with Gross Margin data: {len(valid_gm)} / {len(df)}")
+    print(f"- Companies with PE Ratio data: {len(valid_pe)} / {len(df)}")
+    print(f"- Companies with ROE data: {len(valid_roe)} / {len(df)}")
+    print(f"- Companies with Equity Multiplier data: {len(valid_em)} / {len(df)}") # Added Equity Multiplier statistics
+    print(f"- Companies with Dividend Yield data: {len(valid_dy)} / {len(df)}") # Added Dividend Yield statistics
+    print(f"- Companies with Real Dividend Yield data: {len(valid_real)} / {len(df)}") # Added Real Dividend Yield statistics
+    print(f"- Companies with Profit Growth Y1 data: {len(valid_pg1)} / {len(df)}") # Added Profit Growth Y1 statistics
+    print(f"- Companies with Profit Growth Y2 data: {len(valid_pg2)} / {len(df)}") # Added Profit Growth Y2 statistics
+    print(f"- Companies with Profit Growth Y3 data: {len(valid_pg3)} / {len(df)}") # Added Profit Growth Y3 statistics
+    print(f"- Companies with Short Term Debt to Cash Ratio data: {len(valid_short_term_debt_cash_ratio)} / {len(df)}") # Added Short Term Debt to Cash Ratio statistics
+    print(f"- Companies with Interest Bearing Debt Ratio data: {len(valid_debt_ratio)} / {len(df)}") # Added Interest Bearing Debt Ratio statistics
+
+    # Play start notification sound (Windows system)
     try:
-        print("尝试播放启动提示音...") # 添加调用前打印
-        winsound.Beep(800, 1000) # 播放一个简短的启动音
-        print(f"winsound.Beep 调用完成，未引发异常。") # 添加调用后打印
-    except RuntimeError as re: # 捕获特定的运行时错误
-        print(f"播放启动提示音时发生运行时错误: {re}")
-    except Exception as e: # 捕获其他一般性错误
-        print(f"播放启动提示音时发生其他错误: {e}")
+        print("Attempting to play start notification sound...") # Print before call
+        winsound.Beep(800, 1000) # Play a short startup sound
+        print(f"winsound.Beep call completed without raising an exception.") # Print after call
+    except RuntimeError as re: # Catch specific runtime errors
+        print(f"Runtime error occurred while playing start notification sound: {re}")
+    except Exception as e: # Catch other general errors
+        print(f"Other error occurred while playing start notification sound: {e}")
         
 
 if __name__ == "__main__":
