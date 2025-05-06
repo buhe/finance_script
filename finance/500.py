@@ -97,7 +97,8 @@ def get_financial_metrics(ticker):
         profit_growth_y1 = None
         profit_growth_y2 = None
         profit_growth_y3 = None
-        over_ratio = None # 初始化 Over 比率
+        asset_liability_coverage = None # 初始化资产负债覆盖率
+        debt_ratio = None # 初始化有息负债率
         try:
             balance_sheet = stock.balance_sheet
             cashflow = stock.cashflow # 获取现金流量表
@@ -115,12 +116,27 @@ def get_financial_metrics(ticker):
                 if total_assets is not None and total_equity is not None and total_equity != 0:
                     equity_multiplier = total_assets / total_equity
                 
-                # 计算 Over 比率 (总资产 / 流动负债)
+                # 计算资产负债覆盖率 (总资产 / 流动负债)
                 current_liabilities = latest_bs.get('Total Current Liabilities', None)
                 if current_liabilities is None: current_liabilities = latest_bs.get('Current Liabilities', None) # 备用键名
                 if total_assets is not None and current_liabilities is not None and current_liabilities != 0:
-                    over_ratio = total_assets / current_liabilities
-            
+                    asset_liability_coverage = total_assets / current_liabilities
+
+                # 计算有息负债率
+                total_liabilities = latest_bs.get('Total Liabilities Net Minority Interest', None)
+                if total_liabilities is None: total_liabilities = latest_bs.get('Total Liabilities', None) # 备用键
+
+                short_term_debt = latest_bs.get('Current Debt', 0) # 如果没有则视为0
+                if short_term_debt is None: short_term_debt = latest_bs.get('Short Term Debt', 0) # 备用键
+                if pd.isnull(short_term_debt): short_term_debt = 0 # 处理 NaN
+
+                long_term_debt = latest_bs.get('Long Term Debt', 0) # 如果没有则视为0
+                if pd.isnull(long_term_debt): long_term_debt = 0 # 处理 NaN
+
+                if total_liabilities is not None and total_liabilities != 0:
+                    interest_bearing_debt = short_term_debt + long_term_debt
+                    debt_ratio = interest_bearing_debt / total_liabilities
+
             # 计算回购额
             if not cashflow.empty:
                 latest_cf = cashflow.iloc[:, 0] # 获取最新一期数据
@@ -200,11 +216,12 @@ def get_financial_metrics(ticker):
             'ROE': roe,
             'Equity Multiplier': equity_multiplier,
             'Dividend Yield': dividend_yield, # 添加普通股息率 (已修正)
-            'Real': real_dividend_yield, # 添加真实股息率
+            'Real Dividend Yield': real_dividend_yield, # 添加真实股息率
             'Profit Growth Y1': profit_growth_y1, # 最近一年增长率
             'Profit Growth Y2': profit_growth_y2, # 前一年增长率
             'Profit Growth Y3': profit_growth_y3,  # 再前一年增长率
-            'Over': over_ratio # 添加总资产流动负债覆盖倍数
+            'Asset Liability Coverage': asset_liability_coverage, # 添加资产负债覆盖率
+            'Interest Bearing Debt Ratio': debt_ratio # 添加有息负债率
         }
     except Exception as e:
         print(f"\n获取 {ticker} 的财务指标时出错: {e}")
@@ -221,7 +238,9 @@ def get_financial_metrics(ticker):
             'Real Dividend Yield': None, # 错误时也返回None
             'Profit Growth Y1': None,
             'Profit Growth Y2': None,
-            'Profit Growth Y3': None
+            'Profit Growth Y3': None,
+            'Asset Liability Coverage': None, # 错误时也返回None
+            'Interest Bearing Debt Ratio': None # 错误时也返回None
         }
 
 def main():
@@ -264,11 +283,11 @@ def main():
     print(df_original.columns.tolist())
     
     # 格式化百分比列
-    for col in ['Gross Margin', 'ROE', 'Dividend Yield', 'Real', 'Profit Growth Y1', 'Profit Growth Y2', 'Profit Growth Y3']:
+    for col in ['Gross Margin', 'ROE', 'Dividend Yield', 'Real Dividend Yield', 'Profit Growth Y1', 'Profit Growth Y2', 'Profit Growth Y3', 'Interest Bearing Debt Ratio']:
         df[col] = df[col].apply(lambda x: f"{x:.2%}" if pd.notnull(x) and isinstance(x, (int, float)) else "N/A")
     
-    # 格式化PE Ratio, Equity Multiplier 和 Over
-    for col in ['PE Ratio', 'Equity Multiplier', 'Over']:
+    # 格式化PE Ratio, Equity Multiplier 和 Asset Liability Coverage
+    for col in ['PE Ratio', 'Equity Multiplier', 'Asset Liability Coverage']:
         df[col] = df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else "N/A")
     
     # 创建输出目录（如果不存在）
@@ -303,7 +322,7 @@ def main():
         pe_col_idx = df.columns.get_loc('PE Ratio') + 1
         roe_col_idx = df.columns.get_loc('ROE') + 1
         em_col_idx = df.columns.get_loc('Equity Multiplier') + 1 # 获取权益乘数列索引
-        real_col_idx = df.columns.get_loc('Real') + 1 # 获取真实股息率列索引
+        real_col_idx = df.columns.get_loc('Real Dividend Yield') + 1 # 获取真实股息率列索引
 
         # 遍历数据行，应用条件格式
         for row_idx, row in enumerate(df_original.iterrows(), start=2):  # Excel行从2开始（跳过标题行）
@@ -328,7 +347,7 @@ def main():
             pe = data['PE Ratio']
             roe = data['ROE']
             em = data['Equity Multiplier'] # 获取原始权益乘数值
-            real_val = data['Real'] # 获取原始真实股息率数值
+            real_val = data['Real Dividend Yield'] # 获取原始真实股息率数值
 
             # 获取 Ticker 单元格
             ticker_cell = worksheet.cell(row=row_idx, column=ticker_col_idx)
@@ -380,12 +399,13 @@ def main():
     valid_roe = df[df['ROE'] != 'N/A']
     valid_em = df[df['Equity Multiplier'] != 'N/A'] # 检查有效的权益乘数
     valid_dy = df[df['Dividend Yield'] != 'N/A'] # 检查有效的股息率
-    valid_real = df[df['Real'] != 'N/A'] # 检查有效的真实股息率
+    valid_real = df[df['Real Dividend Yield'] != 'N/A'] # 检查有效的真实股息率
     valid_pg1 = df[df['Profit Growth Y1'] != 'N/A'] # 检查有效的利润增长率Y1
     valid_pg2 = df[df['Profit Growth Y2'] != 'N/A'] # 检查有效的利润增长率Y2
     valid_pg3 = df[df['Profit Growth Y3'] != 'N/A'] # 检查有效的利润增长率Y3
-    valid_over = df[df['Over'] != 'N/A'] # 检查有效的 Over 比率
-    
+    valid_asset_liability_coverage = df[df['Asset Liability Coverage'] != 'N/A'] # 检查有效的资产负债覆盖率
+    valid_debt_ratio = df[df['Interest Bearing Debt Ratio'] != 'N/A'] # 检查有效的有息负债率
+
     print(f"\n数据统计:")
     print(f"- 成功获取毛利率数据的公司数: {len(valid_gm)} / {len(df)}")
     print(f"- 成功获取市盈率数据的公司数: {len(valid_pe)} / {len(df)}")
@@ -396,7 +416,7 @@ def main():
     print(f"- 成功获取最近1年利润增长率数据的公司数: {len(valid_pg1)} / {len(df)}") # 添加利润增长率统计
     print(f"- 成功获取最近2年利润增长率数据的公司数: {len(valid_pg2)} / {len(df)}") # 添加利润增长率统计
     print(f"- 成功获取最近3年利润增长率数据的公司数: {len(valid_pg3)} / {len(df)}") # 添加利润增长率统计
-    print(f"- 成功获取总资产/流动负债覆盖倍数数据的公司数: {len(valid_over)} / {len(df)}") # 添加 Over 比率统计
+    print(f"- 成功获取资产负债覆盖率数据的公司数: {len(valid_asset_liability_coverage)} / {len(df)}") # 添加资产负债覆盖率统计
         # 播放开始提示音 (Windows系统)
     try:
         print("尝试播放启动提示音...") # 添加调用前打印
