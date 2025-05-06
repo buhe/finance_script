@@ -256,11 +256,33 @@ def get_financial_metrics(ticker):
         }
 
 def main():
-    print("开始获取标普500成分股财务数据...")
+    print("欢迎使用财务数据分析脚本！")
+    print("请选择要分析的股票组：")
+    print("1. 标普500成分股 (默认)")
+    print("2. 支付公司 (AXP, MA, V, DFS)")
+    print("3. 饮料公司 (KO, PEP)")
     
-    # 获取标普500成分股列表
-    tickers = get_sp500_tickers()
-    print(f"成功获取 {len(tickers)} 个标普500成分股")
+    choice = input("请输入选项编号 (1-3，默认为1): ").strip()
+    
+    selected_group_name = "SP500"
+    if choice == '2':
+        tickers = ['AXP', 'MA', 'V', 'DFS']
+        selected_group_name = "Payment_Companies"
+        print(f"已选择分析支付公司: {tickers}")
+    elif choice == '3':
+        tickers = ['KO', 'PEP']
+        selected_group_name = "Beverage_Companies"
+        print(f"已选择分析饮料公司: {tickers}")
+    else:
+        # 默认或无效输入，选择标普500
+        if choice != '1' and choice != '':
+            print("无效输入，将默认分析标普500成分股。")
+        tickers = get_sp500_tickers()
+        print(f"开始获取标普500成分股财务数据...成功获取 {len(tickers)} 个成分股")
+
+    if not tickers:
+        print("未能获取到股票列表，程序退出。")
+        return
     
     # 存储所有公司的财务指标
     all_metrics = []
@@ -308,7 +330,7 @@ def main():
     
     # 生成带时间戳的文件名
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_file = os.path.join(output_dir, f"SP500_Financial_Metrics_{timestamp}.xlsx")
+    output_file = os.path.join(output_dir, f"{selected_group_name}_Financial_Metrics_{timestamp}.xlsx")
     
     # 导出到Excel，但不立即保存，而是创建一个ExcelWriter对象
     with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
