@@ -1,0 +1,3 @@
+编写一个node.js 脚本：
+Use agent-browser 进入https://hk.finance.yahoo.com/quote/KWEB/，打印并记录持仓前10大权重，然后获取并打印每个个股的pe（获取个股pe的方法，例如pdd的，访问 https://hk.finance.yahoo.com/quote/PDD/ 获取），
+假设余下的个股pe都是20，算上其余个股、不只前10持仓、计算kweb的加权pe。 Run agent-browser --help to see available commands.
