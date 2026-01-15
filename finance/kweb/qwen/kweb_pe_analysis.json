@@ -1,0 +1,57 @@
+{
+  "holdings": [
+    {
+      "stockCode": "0700.HK",
+      "percentage": 10.23,
+      "peRatio": 25.1
+    },
+    {
+      "stockCode": "9988.HK",
+      "percentage": 8.77,
+      "peRatio": 22.4
+    },
+    {
+      "stockCode": "PDD",
+      "percentage": 7.91,
+      "peRatio": 10.92
+    },
+    {
+      "stockCode": "3690.HK",
+      "percentage": 7.5,
+      "peRatio": 19.18
+    },
+    {
+      "stockCode": "9999.HK",
+      "percentage": 6.09,
+      "peRatio": 17.15
+    },
+    {
+      "stockCode": "9888.HK",
+      "percentage": 4.36,
+      "peRatio": 13.35
+    },
+    {
+      "stockCode": "9961.HK",
+      "percentage": 4.24,
+      "peRatio": 15.82
+    },
+    {
+      "stockCode": "9618.HK",
+      "percentage": 3.97,
+      "peRatio": 9.65
+    },
+    {
+      "stockCode": "2423.HK",
+      "percentage": 3.89,
+      "peRatio": 41.55
+    },
+    {
+      "stockCode": "6618.HK",
+      "percentage": 3.87,
+      "peRatio": 40.93
+    }
+  ],
+  "remainingPercentage": 39.17,
+  "weightedPERatio": 20.549135999999997,
+  "timestamp": "2026-01-15T04:44:24.870Z"
+}
